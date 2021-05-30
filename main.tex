@@ -1,0 +1,61 @@
+%% This is repurposed from `sample-sigconf.tex'
+\documentclass[sigconf, nonacm, 11pt]{acmart}
+
+
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{tabulary}
+\usepackage{soul}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Useful reviewing/feedback annotations
+\input{annotations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+%% end of the preamble, start of the body of the document source.
+\begin{document}
+
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title[How To Build Your Disaggregated Memory System]
+{How To Build \\Your Disaggregated Memory System} % 
+\author{Anil Yelam}
+% \affiliation{
+%  \institution{UC San Diego}}
+\email{ayelam@ucsd.edu}
+
+
+\input{abstract}
+\maketitle
+
+\input{intro}
+\input{background}
+\input{definition}
+\input{design1}
+\input{design2}
+\input{design3}
+\input{design4}
+\input{discussion}
+% \input{related}
+\input{conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}
+\endinput

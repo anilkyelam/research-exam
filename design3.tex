@@ -1,0 +1,135 @@
+
+\subsection{Memory Management}
+Similar to virtual memory interface on traditional servers, a 
+system for system for disaggregated memory needs to pool the 
+memory on multiple servers/nodes and present a unified interface 
+for allocating and accessing this memory by hiding away the 
+underlying physical locations. It should be responsible for 
+tracking available memory across the nodes, map it to an  
+application on allocation and fetch the data when required. 
+With most systems~\cite{legoos,remregions,kona}, there is a 
+global memory manager that maintains this metadata and works 
+with agents/daemons on the (memory) nodes to find space for 
+new allocations. Compute nodes query the manager for new allocations 
+and cache the mappings to directly go to the relevant memory node 
+during access time. Under the hood, the system should aim for better 
+memory efficiency while providing good data path performance and 
+scalability. Below, we discuss few factors that affect these 
+goals.
+
+
+\subsubsection{Memory backing or complementing}
+In a hardware disaggregated setting, all application memory is 
+allocated in the disaggregated memory and local DRAM is very small
+and only used as cache i.e, all the app memory is backed by 
+disaggregated memory. In a software-disaggregated setup, 
+a similar approach can be taken by reserving a small amount 
+of local DRAM on each node for local workspace and the rest is 
+pooled from which memory is transparently allocated to all the 
+nodes. However, this fails to exploit local affinity in such 
+NUMA setting so all systems proposed for this setting prioritize 
+local allocations and only expose unutilized memory for shared 
+cluster uses. Such disaggregated pool can then be used for 
+complementing local memory (not backing it) either by transparently 
+expanding local address space (i.e., remote paging systems) or 
+through other interfaces like mmapped files~\cite{remregions}. 
+
+
+\subsubsection{Memory tracking granularity.}
+Just like paged memory, memory allocation and mapping is done 
+is fixed-size units (slabs). Although extending page size (4KB) 
+to remote memory would be 
+a natural choice, it adds a significant 0.2\% space overhead 
+for maintaining mapping metadata (e.g., 2 GB for a 1 TB region\cite{remregions}),
+so most systems end up using a much bigger size (128B~\cite{remregions}
+segments or "multiple" pages~\cite{infiniswap,kona}). Local 
+memory allocators can them manage these slabs for 
+fine-grained allocations. However, bigger sizes may cause 
+internal fragmentation or require contiguous segments at 
+memory servers and hurt memory efficiency. None of the works,
+however, evaluate this aspect and slab sizes were arbitrary.
+
+
+\subsubsection{Balancing memory usage across nodes.}
+Remote memory used by an application is better if uniformly 
+distributed across multiple memory nodes both to balance the 
+access load and to minimize the performance impact in case of 
+remote node failures. With a global memory manager, we can maintain 
+the available memory across the memory nodes and properly direct 
+memory allocation requests to both distribute memory footprint 
+of application as well as balance overall memory usage across 
+the memory nodes~\cite{legoos,remregions,kona}. However, both 
+the overhead of constantly communicating with memory nodes 
+and the centralized manager may present a scalability bottleneck.
+Infiniswap~\cite{infiniswap} takes a decentralized approach 
+where nodes requesting memory choose randomly from the list of 
+available nodes. To help reduce imbalance, it opts for power of 
+two choices~\cite{10.5555/924815} where instead of randomly 
+picking one, two nodes are picked randomly and the one with the 
+most available memory is chosen. However, it is unclear if this 
+approach sustains the balance in presence of allocations and 
+freeing over time.
+
+% too speculative? not too big of a challenge for systems 
+% to implement this?
+% 
+% \subsubsection{Static or Dynamic mappings}
+% why is this needed?
+% virtual remote addresses is important?
+% having everything at central coordinator may add latency 
+% to the critical path and affects scalability. but 
+% caching may give outdated information.
+% one-sided remote accesses help with latency/performance 
+% but may affect the memory server's ability to flexibly 
+% perform local memory management? 
+
+% affects reclamation is s/w-disaggregated systems
+% During memory access, the node contacts the cached local map 
+% and directly goes to the relevant memory node, and avoid the 
+% overhead of going to the (global) manager. As mappings 
+% are generally static, nodes can use one-sided RDMA memory
+% accesses to shorten the access time. 
+
+
+\subsubsection{Memory reclamation on the server.}
+As mentioned before, software-disaggregated systems need to 
+balance available memory on each node between local and 
+global memory (with priority for local use), and hence should 
+should be amenable to reclamation to make space for expanding 
+local usage. Infiniswap~\cite{infiniswap}, which 
+uses remote memory as swap space, writes swapped out pages 
+to both remote memory and disk and hence can afford to drop the 
+remote data during reclamation on a remote node. This is less of 
+an issue in hardware-disaggregated setting but they may still 
+need to swap out some memory to disk under extreme cluster 
+memory pressure. An interesting, rather unexplored, question then
+is which memory should be picked to drop to minimize performance 
+degradation. Traditional systems use LRU lists based on access
+information to swap out colder pages however such hotness information 
+is either not available or, at best, distributed across 
+compute nodes in a disaggregated system. 
+Infiniswap~\cite{infiniswap} again uses power of choices where 
+memory node queries a random subset of compute nodes for this 
+hotness information and drop relatively colder pages rather than
+randomly dropping any pages.
+
+% \subsubsection{Server-side complexity}
+% how memory is managed on each memory server; some systems 
+% completely ignore this part
+% how does deallocation work?
+% naming
+% function shipping: e.g., AIFM or Semeru
+% legoos moves mmu and tlb to memory nodes, how about other systems?
+
+\subsubsection{Summary}
+Memory efficiency in general is not very well evaluated in any of 
+the systems so far (only Infiniswap~\cite{infiniswap} had a chart on 
+cluster memory utilization), perhaps because of the focus on application 
+performance which is the prime roadblock to feasible disaggregation.
+Userspace runtimes~\cite{aifm,semeru} completely punt on the 
+memory management aspect and assume that required memory is 
+pre-allocated or limit themselves to working with a single memory server. 
+While they explored the performance advantages of 
+user space, these systems most certainly need further work 
+on the memory management side to be considered feasible for adoption. 
+% Would compressing colder pages be worth the memory efficiency?

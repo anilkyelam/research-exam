@@ -1,0 +1,7 @@
+# LaTeX stuff
+*.synctex.gz
+*.bbl
+*.blg
+*.aux
+*.log
+*.out

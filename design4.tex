@@ -1,0 +1,105 @@
+
+\subsection{Other Considerations}
+There are other considerations that received less focus so far 
+and were often overlooked in previous systems but needs to be 
+worked on for adoption in the wild. As work on performance tuning 
+saturates, we expect there to be more focus on these topics in future. 
+
+
+\subsubsection{Fault Tolerance \& Reliability}
+By spreading memory across multiple servers/nodes, memory 
+disaggregation expands the fault domain of an application 
+and makes it more prone to failures. Our system should account
+for this; we only generally need to worry about remote node 
+failures as local node failures occur in traditional 
+setup too and we only want our system to be no less 
+fault-tolerant than traditional setup.
+
+One option is in-memory replication~\cite{leap,kona}.
+This, however, would consume at least twice as much memory,
+wasting precious DRAM and may prove too high of a cost. 
+LegoOS~\cite{legoos} only maintains the log on secondary 
+replica to minimize the memory overhead. Another alternative 
+is to write the remote pages/data to persistent storage (disk) 
+in the background along with storing it in remote 
+memory~\cite{infiniswap}. However, remote write load 
+may be too high for disk to handle which results in 
+disk queue build-ups. Recovering from failure would also be 
+slow but this is tolerable considering that failures are rare.
+In both cases, replication/writing to disk only happen 
+during evictions which are generally off the critical path,
+and hence won't directly affect application performance.
+It is not clear though whether we can get away without 
+any of these and just fail the applications using a memory
+node when it crashes.\anil{LegoOS did some analysis on 
+mean time to failure for hardware that may help here.}
+
+Since network is involved now, network failures may cause 
+timeouts in remote accesses. Normally this only degrades 
+performance due to timeouts/retries during page faults/misses
+but does not affect fault tolerance. In Kona~\cite{kona} however,
+remote accesses are served using special hardware through 
+cache-coherent protocol that is sensitive to memory access 
+latencies and may end up crashing the application.
+
+\subsubsection{Network Efficiency}
+Network bandwidth may become a limiting factor and so better 
+network efficiency would keep the network less congested and 
+latencies low. Amount of networked data is primarily affected 
+by quality of caching (cache misses bring in the data) and 
+the evictions (writing the dirty data back). Bigger cache
+blocks, like the page size in most systems, will cause 
+data amplification (by bringing in redundant data) and hurt 
+network efficiency, especially during the write-backs where 
+dirty data is usually only a small fraction of the block size. 
+Paging approaches cannot track dirty data on finer granularity 
+but Kona~\cite{kona} (with special hardware) and AIFM~\cite{aifm}
+with userspace runtimes can, and avoid I/O amplification by just 
+writing this data. Kona uses a log to track multiple dirty 
+cache lines and sends it to the memory node in batches.
+\anil{anything else?}
+
+\subsubsection{Security \& Isolation}
+Kernel is (has to be) trusted, and as long as the 
+runtime (and agents on all the components) work in 
+kernel space, remote memory can be indirectly provided 
+to application where these indirection mapping/translation 
+is controlled by the kernel, providing a security 
+isolation similar to that provided by the traditional 
+virtual memory. All kernel-based systems provide this 
+support to enable safe access to remote memory in presence
+of multiple applications. User space runtimes cannot 
+implement isolation and support sharing between 
+applications as they are restricted to a single application. 
+Such runtimes may need to 
+bank on kernel-based, lower-level interfaces like 
+Remote Regions~\cite{remregions} or LITE~\cite{literdma}
+for proper isolation in presence of multiple applications 
+using such runtimes.\todo{also talk about performance 
+isolation, does disaggregated design open up more 
+avenues for security attacks?}
+
+% \vspace{5pt}
+% \noindent \uline{Performance Isolation.}
+% caching policies only worry about evicting bad hits 
+% and not separating app-specific. why should they? do 
+% current OSes do it?
+% only Leap separates page caches for applications
+% Or they'll depend on the isolation of underlying 
+% interconnects.
+% But is perf isolation really provided in 
+% traditional virtual memory?
+
+% \subsubsection{Cluster-level Throughput}
+% Systems only focus on memory performance from the 
+% POV of single application. Would it be different for 
+% overall cluster throughput? Fastswap?
+% Given a set of jobs with cpu and memory 
+% requirements, how do you put them on the 
+% compute nodes with with max resource 
+% utilization? 
+
+% However, none ofthese approaches specify how to 
+% schedule jobs when their memory can be split across 
+% local and shared remote memory;
+

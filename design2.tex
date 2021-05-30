@@ -1,0 +1,261 @@
+
+\subsection{Application Performance}
+\label{sec:performance}
+When running on a disaggregated system, we ideally expect 
+no or minimal degradation in application performance 
+when compared to local memory performance. Depending 
+on the application, one can look at its job completion time, 
+throughput or tail latencies as a proxy for performance. 
+(Although, metrics like total cost of ownership (TCO) are 
+more holistic and account for things like memory 
+utilization across the cluster, special hardware costs, etc.
+but they are harder to measure?). In this section, we 
+look at various factors that affect the memory performance,
+through these metrics.
+
+
+\subsubsection{Caching}
+Remote accesses across the network today are still on 
+the order of 10-100x slower with depending on the 
+networking stack and interconnect, so application 
+performance would be terrible if all accesses were 
+to be remote~\cite{netdisagg}. Fortunately, most 
+applications exhibit spatial and temporal locality 
+in accesses which can be exploited by caching 
+remote data, and as such the quality of caching can 
+greatly affect the performance. Depending on the 
+interface exposed, the runtime may choose to do 
+caching or leave it to the application itself. 
+Custom interfaces can enable application-specific 
+caching hints. For example, AIFM~\cite{aifm} allows 
+applications to exclude caching specified data and 
+avoid cache pollution. 
+
+\vspace{3pt}
+\noindent \uline{Cache Block Size.} Fetching remote data in 
+bigger chunks will help exploit spatial locality 
+however it also runs the risk of bringing in redundant data 
+and polluting the cache, so it needs to be properly 
+balanced for the best cache hit ratio. Traditional
+virtual memory-based approaches cannot go lower than 
+the (4KB) page sized blocks as they hook into kernel 
+paging; While LegoOS~\cite{legoos} and Kona~\cite{kona} 
+escaped this fate through hardware modifications, 
+other systems like AIFM~\cite{aifm} moved to user 
+space implementations. Kona evaluates the effect of 
+cache block size on the performance of Redis database 
+and determines 1KB to be optimal, which is conveniently 
+closer to the page size. However, Kona does not do any 
+advanced prefetching (like Leap~\cite{leap}) which, in 
+combination with smaller block sizes, may perform better 
+than exploiting crude spatial locality with bigger blocks.
+Block size also effects eviction policies like LRU (which
+most systems use) as smaller blocks mean a larger number 
+of blocks that need to be monitored for finding eviction
+candidates. 
+
+\vspace{3pt}
+\noindent \uline{Prefetching.}
+Prefetching remote data proactively can bring in 
+correct pages into the cache and avoid cache misses 
+in the critical path. Runtimes can use a transparent 
+prefetcher that identifies access patterns and predict 
+future accesses and/or they can provide prefetch calls 
+in the interface that applications can inject in their 
+code. While having a prefetcher is a more general 
+solution, it has to balance between the accuracy of 
+predictions and the (compute and memory) resources
+it consumes (lower prefetching accuracy results in 
+cache pollution and waste of cache and I/O bandwidth).
+Leap~\cite{leap} is an advanced prefetcher for remote 
+paging that monitors page faults and uses the faulted 
+addresses to predict future pages. Even with coarse 
+information like page faults, Leap was able to achieve 
+1.5-2x improvement for different applications. 
+Systems like AIFM~\cite{aifm} and Remote 
+Regions~\cite{remregions} expose prefetch API 
+providing applications the choice of implementing custom
+prefetching such as the data structure-specific ones in AIFM. 
+
+\vspace{5pt}
+\noindent \uline{Cache Size.}
+The bigger the size of the cache, the better; but the 
+amount of local DRAM is limited (this limit is 
+especially strict in hardware-disaggregated architecture 
+where the amount of local DRAM is small and fixed). 
+Even with the best prefetching and eviction policies, 
+the cache size has to be enough to cover a minimum portion 
+of the working set to avoid performance degradation and, 
+in extreme cases, thrashing. A common chart we see in the 
+evaluation of previous systems is to show the slowdown of 
+an application against the local memory (or, cache size) as 
+\% of either app's peak memory usage (which varies across 
+apps) or an arbitrary local memory capacity, and compare 
+it to other systems; the point being no one wants to pick 
+a particular cache size but leave that option to the reader 
+to trade it off with performance. Looking at variety of 
+applications across papers, it seems like the performance 
+degradation conforms to a hockey stick pattern, remaining 
+graceful until some 25-50\% of the working 
+set~\cite{netdisagg,kona,legoos}. None of these systems give 
+an idea as to the one-size-fits-all limit for the absolute 
+size of local DRAM though. \anil{double check these 
+assertions. cache size is important because it gives a 
+sense of how many/what kind of app mixture can be run on 
+compute node without thrashing} 
+
+\subsubsection{Interface Overhead}
+The interface itself can add some software overhead 
+to the each memory access. Unlike virtual memory 
+interfaces that use native load/store, user space 
+interfaces involve either library calls or another 
+level of pointer indirection (e.g., Java) that may add 
+few cycles for each operation. For example, AIFM uses
+C++ smart pointers and when compared to Fastswap that 
+allows native pointers, it adds a marginal overhead 
+that becomes evident when effects of their runtime and 
+interconnect are minimized. (Fig 7~\cite{aifm}). 
+Similarly, Kona~\cite{kona} that routes remote accesses
+through the cache-coherent hardware that exposes remote 
+memory as another physical DRAM whose accesses are 
+slower compared to regular DRAM due to limited interconnect 
+bandwidth \anil{not sure how much}.
+
+Kernel-
+based custom interfaces like LITE~\cite{literdma} 
+introduce syscall in the access path that adds 
+significant overhead. LITE however is a low-level 
+interface that leaves caching to the application and 
+such accesses must be made in the cache miss path. 
+
+
+\subsubsection{Remote Access Latency} 
+Optimizing the actual latency in fetching remote data 
+(i.e., the cache miss path) is important not only because 
+caching cannot soften the performance impact if the miss 
+latency is too high but also because it impacts tail-latencies 
+that modern datacenter applications are sensitive to. 
+This latency depends on both the implementation 
+overheads on the client and server-side and the choice of 
+the interconnect itself. We discuss these factors below, 
+in addition to the previous optimizations to reduce or 
+hide this latency.
+
+\vspace{5pt}
+\noindent \uline{Network Interconnect.}
+Gao et al.~\cite{netdisagg} analyzed the effect of increasing
+remote access latency for various applications and arrive at 
+4-5 $\mu$s upper bound to maintain performance. (It was, 
+however, done on paging-based systems with default page 
+replacement algorithms not optimized for remote memory, and 
+hence should be taken as a rough estimate).
+Such low latencies are now possible in tight-knit
+local area networks like modern data center racks,  
+where TCP/IP and, more recently, RDMA~\cite{rocev2} have
+become standard transport options. 
+RDMA has been the preferred target transport 
+in most of the recent systems because it cuts down on the 
+software stack on both sides and, more so, because it 
+provides one-sided accesses that avoid remote CPU in 
+critical path. For example, systems that~\cite{literdma,aifm}
+explored the TCP/IP option reported up to 10 $\mu$s overhead 
+compared to RDMA for remote operations. Technologies 
+like Intel Omnipath~\cite{omnipath} and CCIX~\cite{ccix}
+are expected to further slash the latency by bringing the NIC 
+much closer to the CPU, once they are commercially available. 
+\anil{talk about the role of network congestion control?}
+
+% (However, RDMA comes with its scalability constraints 
+% when it comes to registering a lot of memory. 
+% LITE optimized  minimized syscall overheads and 
+% avoid memory copying)
+
+% predictable latency transport for strict tail latency 
+% requirements: net disagg evaluates a few transports and 
+% better congestion control leads to reduced slowdown. 
+
+
+\vspace{5pt}
+\noindent \uline{Minimizing/avoiding software overheads.}
+With respect to the remote access latency, the goal for the 
+runtime is to get keep it as close as possible to the raw network 
+latency and minimize any software overheads. The main software 
+overhead comes from finding space for incoming remote data 
+and deciding which data to evict to make that space 
+(i.e., the typical cache miss handling), before returning to 
+the application. 
+
+Paging-based systems started with conventional disk-paging 
+subsystem and over time improved it to target remote memory
+where paging is more frequent and operates in microsecond
+timescales instead of milliseconds~\cite{Lim2012}. A common 
+optimization is to decouple allocation and eviction by 
+maintaining a free list for newly allocated or fetched-in 
+data and moving eviction to the background and off the 
+critical path~\cite{Lim2012,leap}. 
+For example, Fastswap~\cite{fastswap} offloads  
+memory reclamation to a dedicated CPU core so that the 
+application CPU can return to user space and continue its 
+execution. Another (defacto) optimization is to allocate local 
+pages for newly allocated memory and keep it local until evicted
+(i.e., delayed write-back).
+When bringing additional data along with the required data
+(either because of prefetching or high data granularity to 
+exploit locality), it is recommended to fetch the additional 
+data separately outside the critical path~\cite{fastswap} to 
+avoid head-of-the-line blocking.
+
+Fundamentally though, as long as cache misses (page faults) are 
+handled in software (the only alternative with traditional hardware; 
+although LegoOS, with hardware modifications, still takes the
+software route due to miss path complexity), the software miss path 
+will inevitably cause context-switching, CPU cache pollution,
+etc. that adds to the latency. 
+Kona~\cite{kona}, for this reason, proposes new hardware 
+primitives to offload this path to avoid above issues 
+and also benefit from hardware speedup. 
+The flip side, of course, is the
+complexity of implementing part of the runtime and networking 
+stack in hardware.\todo{refine last two sentences}. 
+
+\vspace{5pt}
+\noindent \uline{Hiding the latency.}
+From a throughput (CPU utilization) standpoint, latency 
+can be hidden by switching out the current thread and 
+running a different thread while the remote data is fetched.
+Kernel thread context switches are on the order of 
+microseconds and may not result in much savings 
+but user space runtimes with light-weight 
+threads can use this approach, like AIFM did.~\cite{aifm}.
+% Only works for compute-intensive applications.
+% polling wastes CPU but context-switching hurts 
+% the latencies and are too high as well.
+
+% \vspace{5pt}
+% \noindent \uline{Server-side latency}
+% Depending on whether server-side CPU and software stack is 
+% involved, it may add some latency to the datapath. Why would 
+% such 
+
+\subsubsection{Reducing remote accesses with RPCs.}
+Some access patterns like traversals may be ill-suited for remote 
+fetching and cause too many cache misses no matter how good 
+caching/prefetching is, only good thing might be executing those 
+operations closer to the memory using RPCs. 
+AIFM gets most of its performance\todo{how much? try to quantify it.}
+by sending such memory intensive operations of its data structures to 
+the memory server. Semeru~\cite{semeru} does the same for 
+garbage collecting the disaggregated Java Heap. This, however,
+feels like a slippery slope as it adds complexity to the memory 
+server that we don't want to, at least in the hardware-disaggregated 
+setup where there is limited compute on memory nodes. 
+Even in the traditional setup, we are still looking to decouple 
+CPU from memory and a compute complexity on the memory side does 
+not help with the disaggregation. 
+\todo{needs work}
+
+% \subsubsection{Effect of Sharing}
+% Why DSMs fare worse. 
+% \anil{Comment on/compare \& contrast the performance of 
+% some existing systems. Effect of transparency? 
+% AIFM vs Fastswap}

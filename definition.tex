@@ -1,0 +1,99 @@
+\section{Memory Disaggregation}
+Memory disaggregation aims to decouple the available compute 
+and memory resources in the cluster and allow for independent 
+allocations of these resources regardless of where a job 
+is placed in the cluster. This means, the OS/runtime 
+that's running the job should provide a platform to 
+expose/give access to potentially all the memory 
+available in the cluster. Ideally, it should hide the complexity 
+of setting up and accessing remote memory (e.g., RDMA 
+connection and queue pair management) and expose an
+easy-to-use interface for working with remote memory.
+At the same time, it should trade-off the properties 
+of the interface with decent performance guarantees 
+and other requirements from the system like resource 
+sharing and isolation across applications. At a high 
+level, the platform is a distributed system consisting 
+of a client-side (compute-side) component (a runtime 
+that exposes the memory interface and acts as an agent 
+on each compute node), the server-side (memory) component 
+(to manage memory on the server) and an 
+interconnect over which these components 
+interact to provide an abstraction for shared cluster memory.
+It may optionally include other cluster resources for 
+global memory/metadata management. \todo{figure?} 
+
+\subsection{Target Architecture}
+Proposed solutions for memory disaggregation target two 
+different kind of cluster/memory architectures based on
+existing technologies or technologies that are expected
+to be available in the near future; we look at system
+design targeting both these architectures (shown in 
+Figure ~\ref{fig:architecture}).
+
+\vspace{3pt}
+\noindent \uline{\textit{Software-disaggregated.}}
+Some systems~\cite{gms,cashmere,infiniswap,remregions,leap,zswap} 
+target the traditional homogeneous 
+datacenters with monolithic servers as the basic 
+deployment unit, connected to each other by low-latency 
+network interconnects like Infiniband or RoCE. Each 
+unit hosts both compute and memory resources and the 
+software provides an interface to remote memory 
+on other nodes. Local memory is prioritized for 
+local jobs and unutilized memory on all the nodes 
+can be pooled and presented to the cluster as 
+remote/disaggregated memory, which could be static 
+or vary in capacity over time. 
+
+% In this case, the fault domain is the 
+% single server unit i.e., if a component on a server fails, 
+% the whole unit usually fails. (Although solutions like Zombieland\cite{zombieland} 
+% were proposed to decouple CPU from memory failures and 
+% vice versa in monolithic servers.\todo{confirm}))
+
+\vspace{3pt}
+\noindent \uline{\textit{Hardware-disaggregated}}
+Other systems~\cite{kona,aifm,fastswap,semeru}, like LegoOS~\cite{legoos}, target a hardware-disaggregated 
+architecture where (most of the) 
+memory nodes are detached from the compute nodes and 
+made available through the network. The memory node 
+can be a traditional monolithic server with limited 
+compute and stuffed with DRAM~\cite{fastswap} or 
+each DRAM unit itself directly-attached to a memory 
+controller and network interface~\cite{legoos}. 
+Even in a purely disaggregated setup, however, 
+it is generally assumed that each compute node has 
+a small amount of local memory and vice 
+versa.~\cite{legoos,kona}
+
+% While the 
+% former is more amenable for existing deployments, the 
+% latter requires newer technologies like Intel 
+% OmniPath~\cite{omnipath} to attach DRAM to the network 
+% without a processor.
+
+% The latter, however, is also more fault tolerant as each 
+% DRAM unit is failure-isolated and does not affect other 
+% units.
+
+In both architectures, compute servers use local memory 
+to run the OS and other runtime essentials for exposing remote 
+memory\footnote{we use the terms remote or disaggregated 
+memory synonymously to refer to all the memory 
+available for shared usage of the cluster in both 
+architectures}, and only use remote memory for the applications. 
+There are many reasons for this choice. 
+First, without local DRAM, all the memory 
+accesses would be remote and the memory controller should 
+possess the knowledge and capability to fetch remote memory 
+directly without any help from software; such complex "control 
+path" knowledge would need either a "smart" memory controller 
+(e.g., RMC in soNUMA~\cite{sonuma}) or some other smart 
+hardware (e.g., ccFPGA in Kona~\cite{kona}) next to it. 
+Even these solutions do not put OS on remote memory and 
+and maintain local DRAM to exploit cache locality as remote 
+accesses are still an at least an order of magnitude higher 
+than local.
+
+\anil{explain other benefits like fault tolerance?}
