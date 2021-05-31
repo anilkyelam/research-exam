@@ -4,24 +4,25 @@
 \begin{figure*}[h!]
     \centering
     \includegraphics[width=.9\linewidth]{fig/architecture.pdf}
-    \caption{(too big?) Shows (a) software-disaggregated architecture where disaggregated memory is pooled from 
+    \caption{(too big?) Shows (a) software-disaggregated 
+    architecture where disaggregated memory is pooled from 
     traditional servers as opposed to the (b) hardware-disaggregated
     design where most memory is decoupled in hardware.}
     \label{fig:architecture}
 \end{figure*}
 
-With the tremendous growth of computing in the past two decades, 
-applications has become both data-intensive and latency-
-sensitive, which gave rise to in-memory computing in lieu 
-of going to the disk. This led to memory-intensive 
+With the tremendous growth of computing in the past two 
+decades, applications have become both data-intensive 
+and latency-sensitive, which gave rise to in-memory 
+computing in lieu of going to the disk. 
+This led to memory-intensive 
 applications whose memory needs on a server outweigh the 
 processor needs, introducing a skew in resource usage.
 However, traditional servers come with fixed processor 
 and memory resources that does not allow dynamically
-resizing memory. Traditionally, this was solved by swapping 
+resizing memory. This was generally solved by swapping 
 to disk but disk speeds were really slow compared to memory 
 affecting performance. 
-
 At the same time, the diversification of computing usecases 
 introduced a high heterogeneity of applications (e.g., cloud 
 computing) with varying memory needs in proportion to 
@@ -36,57 +37,76 @@ decoupling of memory resources in a cluster from other
 (processor) resources. 
 % \anil{there are other benefits to memory disaggregation...}
 
-\mc{Scoping}
-An obvious way to alleviate memory pressure is to build a 
-distributed application that runs on multiple nodes and 
+One way to alleviate memory pressure is to scale out and 
+build a distributed application that runs on multiple nodes and 
 adjust itself to the memory restrictions on the individual 
-nodes. Indeed, there is a lot of work here that focus on building 
-performant distributed applications, like the in-memory 
-data stores (e.g., RAMCloud, RDMA-based KVS papers, etc.\todo{cite some}). 
-However, these solutions are specific to those applications and 
-do not generalize. However, we are looking for general 
-platforms (rather than individual applications) that provide 
-(somewhat) generic, low-level interfaces targeting a wide 
-spectrum of applications and allow them to efficiently utilize 
-the entire memory of the cluster. Some of the earlier 
-systems that provided such mechanisms include the remote 
-swapping systems~\cite{gms,cashmere} that transparently moved 
-around the pages of virtual memory subsystem in the cluster,
-and distributed shared memory systems~\cite{treadmarks,dsm1}
-that did the same behind a global virtual address space.
-\anil{Remote memory draws from this lesson and avoids the hard problem of sharing: its goal is not to implement shared memory. In fact, remote memory need not be shared at all: it can be used to store private pages to extend local memory or to safeguard data remotely. Or it can provide a different form of sharing: we envision non-simultaneous sharing of remote memory, whereby a host stops using the data before another node starts (e.g., in different phases of map-reduce).}
+nodes. Indeed, there are many platforms that provide distributed 
+memory management for such applications like distributed key-value 
+stores~\cite{Ousterhout2010,Lim2012,Novakovic2016,Kalia2015},
+distributed shared memory (DSM) 
+systems~\cite{treadmarks,dsm1,farm,gam}, etc. These systems 
+provide a globally accessible interface for all servers where  
+the focus is on providing fine-grained memory sharing and 
+a reasonable consistency model for distributed applications. 
+An alternative is to extend the private memory space 
+of (single-node) applications a la 
+remote swapping systems~\cite{gms,cashmere} that transparently
+swap application pages to remote memory without any notion 
+of sharing across servers (i.e., their memory 
+consistency model stops with cache coherence protocols on a 
+single server). In this report, we focus 
+on the latter kind where the stress is more on perfomant 
+remote access mechanisms and efficient memory management for 
+individual applications and less on memory sharing and 
+consistency across servers.
 
-\anil{There are many ways for a machine to store data remotely,
-such as using key-value storage systems (e.g., [16, 17, 28, 36]), tuples [14], distributed objects [45], files, database systems, and RDMA [4, 5]. While effective, these abstractions are fundamen- tally different from the abstraction of memory accessed via}
+As the networks become faster and technologies such as 
+RDMA~\cite{farm,rocev2} arrive to commodity clusters, 
+the remote access latencies are inching closer to native 
+DRAM latencies (which, on the contrary, are nearing 
+saturation~\cite{Aguilera2017}), making remote memory more 
+accessible for applications, performance-wise~\cite{netdisagg}. 
+Consequently, there has been a renewed interest in 
+recent years in building remote memory 
+systems~\cite{infiniswap,zswap,leap,fastswap,
+legoos,kona,aifm,semeru,remregions,literdma}.
 Traditional way of memory disaggregation is to pool/track  
 unused memory across the cluster in software 
 and use it to complement memory on the memory-hungry servers.
 This is still popular with work on remote swapping systems 
 continuing to this day~\cite{infiniswap,fastswap,zswap,leap}.
-The other, more recent-style is to disaggregate the memory 
-in hardware and is available to all the compute nodes through
-the network~\cite{legoos}. In both cases, building a system 
-that exposes and manages such disaggregated memory face very 
+The other, more recent approach is to disaggregate the memory 
+in hardware and where all the memory is decoupled from compute
+and is made available to the compute nodes via 
+the network~\cite{legoos,bladedisagg1,sonuma}. 
+(we use the terms \textit{remote} or 
+\textit{disaggregated} memory synonymously to refer 
+to all the memory 
+available for shared usage of the cluster whether it is 
+pooled in software or hardware). 
+
+In both cases, building a system 
+that exposes and manages such disaggregated memory face  
 similar design challenges. First, the system should decide on
 the right interface to expose this memory; for example,
 to either be transparent and avoid any application changes, 
-or to be more expressive to provide richer functionality and 
-allow app optimizations. Remote access latencies are still an 
-order-of-magnitude worse than local, so the system should 
-decide on performance optimizations like caching or at least,
-enable applications to implement their optimizations. 
+or to be more expressive and provide richer functionality and 
+exploit app semantics for performance. Moreover, remote access 
+latencies are still an order-of-magnitude worse than local, so the 
+system should implement on performance optimizations like caching 
+or at the least, enable applications to implement such optimizations. 
 While providing reasonable programming model and performance
-for a wide set of applications, it should also work towards 
+for a wide range of applications, it should also work towards 
 efficiently managing the cluster memory behind the scenes and 
-maintain good utilization - our goal in the first place.
+maintain good memory utilization.
 
 In this report, we explore in detail, the above design 
 challenges of building a system for disaggregated memory, 
-and some more that is expected of a holistic system e.g., 
-fault tolerance, reliability, security and isolation, etc.
-through the lens of recent disaggregated/far memory systems.
-~\cite{infiniswap,zswap,leap,fastswap,legoos,kona,aifm,semeru,
-remregions,literdma}. Through this analysis, we hope to 
+in addition to some more that is expected of a holistic 
+system e.g., fault tolerance, reliability, security and 
+isolation, etc. through the lens of recent 
+disaggregated/far memory systems. 
+Through this analysis, we hope to 
 highlight the trade-offs involved with various design 
-considerations and challenges left for widespread adoption.
-We end with a discussion on \todo{}.
+considerations. We end with a discussion of remaining 
+challenges in the system design e.g., \todo{}.
