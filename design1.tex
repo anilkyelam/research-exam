@@ -6,130 +6,6 @@ disaggregated system and for each of them, we discuss why it
 matters, how previous systems have (not) treated it, are there 
 going to be trade-offs with others, etc. 
 
-\begin{table*}[t]
-  \centering
-      \centering
-      \begin{tabular}{ccccccccc} \\ \hline            
-        \multicolumn{1}{|p{1.5cm}|}{\textbf{System}} 
-            & \multicolumn{1}{|p{2cm}|}{\centering \textbf{Memory\\Interface}}
-            & \multicolumn{1}{|p{2cm}|}{\centering \textbf{Interposition\\Layer}}
-            & \multicolumn{1}{|p{1.5cm}|}{\centering \textbf{Trans-\\parent?}}
-            & \multicolumn{1}{|p{1.5cm}|}{\centering \textbf{General?}}
-            & \multicolumn{1}{|p{1.5cm}|}{\centering \textbf{What's\\Remote}}
-            & \multicolumn{1}{|p{1.5cm}|}{\centering \textbf{Sharing\\support?}}
-       \\ \hline
-        Infiniswap~\cite{infiniswap}
-            & Virt Mem
-            & Kernel (Paging)
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        zSwap~\cite{zswap}
-            & Virt Mem
-            & Kernel (Paging)
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        Leap~\cite{leap}
-            & Virt Mem
-            & Kernel (Paging)
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        Fastswap~\cite{fastswap}
-            & Virt Mem
-            & Kernel (Paging)
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        LegoOS~\cite{legoos}
-            & Virt Mem
-            & Kernel/Hardware
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        Kona~\cite{kona}
-            & Virt Mem
-            & Hardware
-            & Yes
-            & Yes
-            & Heap
-            & No
-        \\ \hline
-        Fastswap~\cite{fastswap}
-            & Virt Mem
-            & Kernel (Paging)
-            & Yes
-            & Yes
-            & All
-            & No
-        \\ \hline
-        AIFM~\cite{aifm}
-            & C++ 
-            & User space
-            & Yes
-            & No
-            & Portion
-            & No
-        \\ \hline
-        Semeru~\cite{semeru}
-            & Java
-            & User space
-            & Yes
-            & No
-            & (Java) Heap
-            & No
-        \\ \hline
-        Remote Regions~\cite{remregions}
-            & Custom
-            & Kernel (ioctl)
-            & No
-            & Yes
-            & Portion
-            & Basic
-        \\ \hline
-        LITE MRs~\cite{literdma}
-            & Custom
-            & Kernel (ioctl)
-            & No
-            & Yes
-            & Portion
-            & Basic
-        \\ \hline
-        % FaRM~\cite{farm}
-        %     & PGAS
-        %     & User space
-        %     & No
-        %     & No
-        %     & Portion
-        %     & Yes
-        % \\ \hline
-        % GAM~\cite{gam}
-        %     & PGAS
-        %     & User space
-        %     & No
-        %     & No
-        %     & Portion
-        %     & Yes
-        % \\ \hline
-      \end{tabular}
-    \vskip .5em
-    \caption{Interfaces for remote memory adopted in some 
-    recent systems \todo{is this table really adding any 
-    value?}}
-    \label{tab:interfaces}
-\end{table*}
-
 \subsection{Programming Model}
 A key question for a disaggregated system is how it 
 chooses to expose the memory (both local and remote) of the 
@@ -142,7 +18,7 @@ Does the app (need to) know whether an access is local or
 remote? Does it require a rewrite of applications or can 
 existing applications port to it with minimal or no effort?
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Virtual memory-based transparency.}
 In a traditional (x86) server, access to local memory is 
 provided through the virtual memory abstraction using 
@@ -200,7 +76,7 @@ accesses through cache coherence protocol and routes all remote
 accesses through this hardware, which implements the runtime. 
 This approach however requires special hardware.
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Language-based Transparency.}
 Without special hardware support like Kona~\cite{kona}, 
 only a kernel (paging) based implementation can provide 
@@ -262,7 +138,7 @@ data-intensive parts like object traversal to the memory
 servers~\cite{semeru}.
 
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{No Transparency.}
 Some interfaces provide remote memory through a custom APIs 
 (usually implemented as a set of library or system calls) that 

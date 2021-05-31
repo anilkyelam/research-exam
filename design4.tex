@@ -57,7 +57,8 @@ but Kona~\cite{kona} (with special hardware) and AIFM~\cite{aifm}
 with userspace runtimes can, and avoid I/O amplification by just 
 writing this data. Kona uses a log to track multiple dirty 
 cache lines and sends it to the memory node in batches.
-\anil{anything else?}
+\anil{Kona/AIFM + Leap Prefetching may help with 
+read I/O amplification as well.}
 
 \subsubsection{Security \& Isolation}
 Kernel is (has to be) trusted, and as long as the 
@@ -75,11 +76,13 @@ Such runtimes may need to
 bank on kernel-based, lower-level interfaces like 
 Remote Regions~\cite{remregions} or LITE~\cite{literdma}
 for proper isolation in presence of multiple applications 
-using such runtimes.\todo{also talk about performance 
-isolation, does disaggregated design open up more 
-avenues for security attacks?}
+using such runtimes. \todo{Even ifan attacker does not 
+control these components, it can launch side-channel and 
+denial-of-service attacks similar to 
+~\cite{Pythia}, so more work is needed here.
+Also, is performance isolation worth exploring?}
 
-% \vspace{5pt}
+% \vspace{3pt}
 % \noindent \uline{Performance Isolation.}
 % caching policies only worry about evicting bad hits 
 % and not separating app-specific. why should they? do 

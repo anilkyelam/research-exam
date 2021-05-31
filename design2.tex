@@ -77,7 +77,7 @@ Regions~\cite{remregions} expose prefetch API
 providing applications the choice of implementing custom
 prefetching such as the data structure-specific ones in AIFM. 
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Cache Size.}
 The bigger the size of the cache, the better; but the 
 amount of local DRAM is limited (this limit is 
@@ -121,8 +121,7 @@ memory as another physical DRAM whose accesses are
 slower compared to regular DRAM due to limited interconnect 
 bandwidth \anil{not sure how much}.
 
-Kernel-
-based custom interfaces like LITE~\cite{literdma} 
+Kernel-based custom interfaces like LITE~\cite{literdma} 
 introduce syscall in the access path that adds 
 significant overhead. LITE however is a low-level 
 interface that leaves caching to the application and 
@@ -141,7 +140,7 @@ the interconnect itself. We discuss these factors below,
 in addition to the previous optimizations to reduce or 
 hide this latency.
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Network Interconnect.}
 Gao et al.~\cite{netdisagg} analyzed the effect of increasing
 remote access latency for various applications and arrive at 
@@ -175,7 +174,7 @@ much closer to the CPU, once they are commercially available.
 % better congestion control leads to reduced slowdown. 
 
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Minimizing/avoiding software overheads.}
 With respect to the remote access latency, the goal for the 
 runtime is to get keep it as close as possible to the raw network 
@@ -218,7 +217,7 @@ The flip side, of course, is the
 complexity of implementing part of the runtime and networking 
 stack in hardware.\todo{refine last two sentences}. 
 
-\vspace{5pt}
+\vspace{3pt}
 \noindent \uline{Hiding the latency.}
 From a throughput (CPU utilization) standpoint, latency 
 can be hidden by switching out the current thread and 
@@ -231,7 +230,7 @@ threads can use this approach, like AIFM did.~\cite{aifm}.
 % polling wastes CPU but context-switching hurts 
 % the latencies and are too high as well.
 
-% \vspace{5pt}
+% \vspace{3pt}
 % \noindent \uline{Server-side latency}
 % Depending on whether server-side CPU and software stack is 
 % involved, it may add some latency to the datapath. Why would 

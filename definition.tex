@@ -96,4 +96,101 @@ and maintain local DRAM to exploit cache locality as remote
 accesses are still an at least an order of magnitude higher 
 than local.
 
-\anil{explain other benefits like fault tolerance?}
+{\renewcommand{\arraystretch}{1.2}% for the vertical row padding
+\begin{table*}[!t]
+    \centering
+    \begin{tabular}{l|ccccc} 
+        \hline         
+        \textbf{Interface Type}
+            & \textbf{System}
+            & \textbf{Transparent?}
+            & \textbf{General?}
+            & \textbf{\shortstack[l]{What's\\Remote}}
+            & \textbf{\shortstack[l]{Sharing \\ support}}
+        \\ \hline
+        \multirow{4}{*}{\shortstack[l]{Virtual Memory \\ (Traditional Paging)}}
+            & Infiniswap~\cite{infiniswap}
+            & Yes
+            & Yes
+            & All
+            & No
+        \\ \cline{2-6}
+            & zSwap~\cite{zswap}
+            & Yes
+            & Yes
+            & All
+            & No
+        \\ \cline{2-6}
+            & Leap~\cite{leap}
+            & Yes
+            & Yes
+            & All
+            & No
+        \\ \cline{2-6}
+            & Fastswap~\cite{fastswap}
+            & Yes
+            & Yes
+            & All
+            & No
+        \\ \hline
+        \multirow{2}{*}{\shortstack[l]{Virtual Memory \\ (New Hardware)}}
+            & LegoOS~\cite{legoos}
+            & Yes
+            & Yes
+            & All
+            & No
+        \\ \cline{2-6}
+            & Kona~\cite{kona}
+            & Yes
+            & Yes
+            & Heap
+            & No
+        \\ \hline
+        \multirow{2}{*}{\shortstack[l]{Language-based \\ (User space)}}
+            & AIFM~\cite{aifm}
+            & Yes
+            & No
+            & Portion
+            & No
+        \\ \cline{2-6}
+            & Semeru~\cite{semeru}
+            & Yes
+            & No
+            & (Java) Heap
+            & No
+        \\ \hline
+        \multirow{2}{*}{\shortstack[l]{Custom API \\ (Kernel-based)}}
+            & Remote Regions~\cite{remregions}
+            & No
+            & Yes
+            & Portion
+            & Basic
+        \\ \cline{2-6}
+            & LITE MRs~\cite{literdma}
+            & No
+            & Yes
+            & Portion
+            & Basic
+        \\ \hline
+        % FaRM~\cite{farm}
+        %     & PGAS
+        %     & User space
+        %     & No
+        %     & No
+        %     & Portion
+        %     & Yes
+        % \\ \hline
+        % GAM~\cite{gam}
+        %     & PGAS
+        %     & User space
+        %     & No
+        %     & No
+        %     & Portion
+        %     & Yes
+        % \\ \hline
+    \end{tabular}
+    \vskip .5em
+    \caption{Various interfaces for remote memory adopted in 
+    some recent systems}
+    \label{tab:interfaces}
+  \end{table*}

@@ -1,12 +1,102 @@
 \section{DISCUSSION}
 \label{sec:discussion}
-\anil{WORKING HERE}
-\mc{Future challenges and opportunities in topics described 
-above or any new ones that needs to be solved before 
-disaggregation could become feasible/or to make it more 
-adoptable. Look at \cite{Aguilera2017} and assess what 
-the paper got it right and what it did not.}
+Future challenges and opportunities in topics described 
+above or any new ones that needs to be solved that could 
+make disaggregation more amenable for adoption.
+We also particularly look at challenges and opportunities 
+proposed by Aguilera et al.~\cite{Aguilera2017} and 
+highlight some of them that are yet to be explored.
 
+
+\vspace{3pt}
+\noindent \uline{Job scheduling on such systems.}
+2. What's the future of job scheduling like 
+fastswap in the context of far memory? 
+1. Extending fast swap on how many jobs can 
+co-exist decently on a particular compute node 
+oversubscribing cache space for local memory?
+It depends on locality patterns of the apps,
+we find a balanced mixture of apps that can 
+do well with fixed amount of local memory
+as cache.
+
+
+\vspace{3pt}
+\noindent \uline{Disaggregated Memory for VMs and beyond.}
+Most modern workloads run on some virtualization platform 
+or the other~\cite{Aguilera2017}. 
+Need to extend it for virtualization solutions (VMs, Containers,
+Lambdas, etc.) with proper SLO guarantees to serve the cloud model. 
+Making it available for virtual machines through the 
+hypervisor, there hasn't been any work in this direction.
+Through Hypervisor, would add an additional layer 
+introducing overheads and gap between apps. 
+Some works already 
+consider hypervisors:~\cite{Lim2012}. 
+
+
+\vspace{3pt}
+\noindent \uline{Is Transparency the way forward?}
+Most systems use transparent in an effort to stay relevant.
+But app hints seem to be important in keeping up performance.
+May be there is a middle-ground where app can choose the 
+interface to be transparent or not?
+Could managed/userspace runtimes be the future of 
+remote memory systems? Is far memory awareness really 
+important in the longer term? What kind of adoption did 
+NUMA-aware data structures see?
+A kernel-based interface that allows for 
+application-runtime co-design. Providing perf 
+benefits of userspace runtimes while generality 
+and sharing benefits of kernel-based 
+implementation. but what's lacking in 
+remote regions? 
+
+\vspace{3pt}
+\noindent \uline{What's the right sharing model?}
+Systems have so far avoided providing any explicit
+sharing and only coarse grained sharing. 
+may be there is a middle-ground in the ones provided 
+by remote regions and such. 
+paper suggests even coarser sharing but it hasn't
+explored yet.
+
+
+\vspace{3pt}
+\noindent \uline{What's the right amount of local memory?}
+In har
+since local DRAM is fixed and cannot be huge, how to 
+determine this? Should most of the kernel be moved too?
+in s/w systems, this becomes a problem to how to 
+prioritize between local and cluster memory. 
+11. What is the bare minimum piece of runtime that must run 
+locally? Perhaps parts of a monolithic OS like Linux can 
+still go on remote memory leaving a very thin kernel 
+required for supporting caching and remote memory ops. 
+What are the benefits? Is Yizhou's network disaggregation 
+related?
+
+
+\vspace{3pt}
+\noindent \uline{What's the right server-side complexity?}
+In har
+since local DRAM is fixed and cannot be huge, how to 
+determine this? Should most of the kernel be moved too?
+in s/w systems, this becomes a problem to how to 
+prioritize between local and cluster memory. 
+legoOs assumes mcomponents can perform complex tasks like 
+logging, replication, etc. 
+What server capabilities are reasonable? Should function 
+shipping be allowed?
+
+
+\vspace{3pt}
+\noindent \uline{Need for standard benchmarks}
+5. Wide ranging benchmarks? Spark failure shows that 
+bad locality can hurt app performance beyond salvage due 
+to thrashing. A standard benckmark with wide range of 
+applications to properly compare across systems.
+Mem utilization should be a standard metric to evaluate.
 1. Does memory disaggregation make sense for 
 compute-intensive applications? What applications/use-cases
 is it the most suitable for? What are some apps where it 
@@ -16,55 +106,23 @@ get amortized and using disk may not be that bad.
 Then why did spark fail to run on Infiniswap? 
 Because working set is big and it started thrashing? 
 
-2. What's the future of job scheduling like 
-fastswap in the context of far memory? 
 
+\vspace{3pt}
+\noindent \uline{Co-existing/exploting other trends 
+in the data centers}
+Opportunities with programmable networking
+using it for memory and network load-balancing 
+prevent congestion
+15. Challenges that come with accelerators 
+10. What interface works best for accelerators, keeping 
+the hardware heterogeneity? 
+Kona provides a first view...
+Hardware like Kona is good but handling the
+complexity of replication and security in the 
+hardware might be hard?
 3. How might the new hardware architectures e.g., 
 emerging networking interconnects like OmniPath 
 affect the design of such systems? 
-
-4. Future: how can remote memory be made to work 
-with VMs/cloud tenants? Some works already 
-consider hypervisors:~\cite{Lim2012}. 
-
-5. Is remote memory-based app feasible performance-wise?
-Yes, since most of the memory tends to be cold and 
-if caching is done right, it may not affect the 
-performance that much.. look at the eval sections of 
-various systems to prove this?
-
-6. Could managed/userspace runtimes be the future of 
-remote memory systems? Is far memory awareness really 
-important in the longer term? What kind of adoption did 
-NUMA-aware data structures see? 
-
-7. What's does the future look like for memory disaggregation?
-Is it gonna play out?
-
-8. What server capabilities are reasonable? Should function 
-shipping be allowed?
-
-9. Which system comes close? Where can it get better?
-only infiniswap and legoos checks most boxes but 
-it targets future hardware.
-i.e., what would you add to LegoOS?
-pure userspace runtimes are not it. but if co-design is 
-a must, then may be kernel-based, ioctl runtimes are 
-probably the way?
-
-10. What interface works best for accelerators, keeping 
-the hardware heterogeneity? 
-
-11. What is the bare minimum piece of runtime that must run 
-locally? Perhaps parts of a monolithic OS like Linux can 
-still go on remote memory leaving a very thin kernel 
-required for supporting caching and remote memory ops. 
-What are the benefits? Is Yizhou's network disaggregation 
-related?
-
-12. Can we take lessons from somewhere regarding the 
-transparency/generality vs performance debate?
-
 13. Currently can't scale to more than rack-scale or a few 
 racks due to interconnect latency. but 
 as new technologies and runtimes within 
@@ -72,40 +130,8 @@ the server cut the latencies, it will perhaps
 allow more interconnect distance between the 
 servers, and grow to an entire datacenter. 
 
-14. Hardware like Kona is good but handling the
-complexity of replication and security in the 
-hardware might be hard?
 
-15. Challenges that come with accelerators 
-
-16. Opportunities with programmable networking
-using it for memory and network load-balancing 
-prevent congestion 
-
-\subsection{Future}
-1. Semeru + Far Memory Data structures: currently semeru 
-partitions and spreads the heap over multiple machines 
-with no regard of data structure optimizations. 
-
-2. Kona/AIFM + Leap Prefetching may help with 
-read I/O amplification as well.
-
-3. Traditionally less focus on the intricacies of server-side 
-memory management like avoiding fragmentation etc.
-
-4. Security and Isolation, specifically performance isolation
-does not exist. 
-
-
-5. Need to extend it for virtualization solutions with 
-proper SLO guarantees to serve the cloud model. 
-Making it available for virtual machines through the 
-hypervisor, there hasn't been any work in this direction.
-Through Hypervisor, would add an additional layer 
-introducing overheads and gap between apps. 
-
-
-5. Wide ranging benchmarks? Spark failure shows that 
-bad locality can hurt app performance beyond salvage due 
-to thrashing. A standard benckmark with wide range of 
-applications to properly compare across systems.
+% IMP QUESTIONS FOR THE TALK
+% - What's does the future look like for memory disaggregation?
+%   Is it gonna play out?
+%
