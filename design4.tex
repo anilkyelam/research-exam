@@ -5,37 +5,38 @@ and were often overlooked in previous systems but needs to be
 worked on for adoption in the wild. As work on performance tuning 
 saturates, we expect there to be more focus on these topics in future. 
 
-
 \subsubsection{Fault Tolerance \& Reliability}
 By spreading memory across multiple servers/nodes, memory 
 disaggregation expands the fault domain of an application 
 and makes it more prone to failures. Our system should account
 for this; we only generally need to worry about remote node 
 failures as local node failures occur in traditional 
-setup too and we only want our system to be no less 
+setup too and the goal is for our system to be no less 
 fault-tolerant than traditional setup.
 
 One option is in-memory replication~\cite{leap,kona}.
 This, however, would consume at least twice as much memory,
 wasting precious DRAM and may prove too high of a cost. 
 LegoOS~\cite{legoos} only maintains the log on secondary 
-replica to minimize the memory overhead. Another alternative 
+replica to minimize the memory overhead risking higher 
+recovery time after a failure. Another alternative 
 is to write the remote pages/data to persistent storage (disk) 
 in the background along with storing it in remote 
 memory~\cite{infiniswap}. However, remote write load 
-may be too high for disk to handle which results in 
+may be too high for disk to handle which may result in 
 disk queue build-ups. Recovering from failure would also be 
-slow but this is tolerable considering that failures are rare.
-In both cases, replication/writing to disk only happen 
+slower but this may be tolerable if the failures are rare.
+In both cases though, replication/writing to disk only happen 
 during evictions which are generally off the critical path,
 and hence won't directly affect application performance.
-It is not clear though whether we can get away without 
+It is not clear, however, whether we can get away without 
 any of these and just fail the applications using a memory
-node when it crashes.\anil{LegoOS did some analysis on 
-mean time to failure for hardware that may help here.}
+node when it crashes.
+% \anil{LegoOS did some analysis on 
+% mean time to failure for hardware that may help here.}
 
-Since network is involved now, network failures may cause 
-timeouts in remote accesses. Normally this only degrades 
+Since network is involved now, transient network failures
+or congestion may affect remote accesses. Normally this only degrades 
 performance due to timeouts/retries during page faults/misses
 but does not affect fault tolerance. In Kona~\cite{kona} however,
 remote accesses are served using special hardware through 
@@ -55,10 +56,8 @@ dirty data is usually only a small fraction of the block size.
 Paging approaches cannot track dirty data on finer granularity 
 but Kona~\cite{kona} (with special hardware) and AIFM~\cite{aifm}
 with userspace runtimes can, and avoid I/O amplification by just 
-writing this data. Kona uses a log to track multiple dirty 
-cache lines and sends it to the memory node in batches.
-\anil{Kona/AIFM + Leap Prefetching may help with 
-read I/O amplification as well.}
+writing this data. For example, Kona uses a log to track multiple 
+dirty cache lines and sends it to the memory node in batches.
 
 \subsubsection{Security \& Isolation}
 Kernel is (has to be) trusted, and as long as the 
@@ -71,16 +70,16 @@ virtual memory. All kernel-based systems provide this
 support to enable safe access to remote memory in presence
 of multiple applications. User space runtimes cannot 
 implement isolation and support sharing between 
-applications as they are restricted to a single application. 
-Such runtimes may need to 
+applications as they are restricted to a single 
+application. Such runtimes may need to 
 bank on kernel-based, lower-level interfaces like 
 Remote Regions~\cite{remregions} or LITE~\cite{literdma}
 for proper isolation in presence of multiple applications 
-using such runtimes. \todo{Even ifan attacker does not 
-control these components, it can launch side-channel and 
-denial-of-service attacks similar to 
-~\cite{Pythia}, so more work is needed here.
-Also, is performance isolation worth exploring?}
+using such runtimes. Even if an attacker does not 
+control these components, disaggregated memory increases the 
+attack surface and may enable side-channel attacks such as  
+Pythia~\cite{Pythia}, so more work on security is certainly 
+needed. 
 
 % \vspace{3pt}
 % \noindent \uline{Performance Isolation.}

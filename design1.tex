@@ -10,8 +10,9 @@ going to be trade-offs with others, etc.
 A key question for a disaggregated system is how it 
 chooses to expose the memory (both local and remote) of the 
 cluster to the applications running on it. Below, we talk about 
-various aspects of the interface, while referring to 
-previous systems (Table \ref{tab:interfaces}).
+various aspects of the interface while referring to 
+various interfaces proposed in previous systems 
+(also listed in Table \ref{tab:interfaces}).
 
 \subsubsection{Transparency}
 Does the app (need to) know whether an access is local or 
@@ -34,11 +35,10 @@ and language-agnosticism where all the applications
 targeting x86 hardware can utilize  
 remote memory without a single line of code change. The flip side 
 is that this interface is rigid (it cannot be extended like a
-regular API) and kernel-based and so doesn't allow any 
-app-specific information to percolate into the runtime and 
-limits its performance optimizations, as we will see in 
+regular API) and kernel-based, and so doesn't allow any 
+app-specific information to percolate into the runtime limiting
+its performance optimizations, as we will see in 
 section \ref{sec:performance};
-
 
 Due to its complete transparency, it has been the 
 go-to interface for all the \textit{remote paging} systems 
@@ -83,9 +83,9 @@ only a kernel (paging) based implementation can provide
 the completely transparent memory interface that can be 
 exploited by all the traditional applications
 without application changes. However, kernel-based 
-implementations suffer from I/O amplification and 
-incomplete information on memory access 
-patterns because the data tracking and movement granularity 
+implementations suffer from incomplete information on 
+memory access patterns and data amplification overheads 
+because the data tracking and movement granularity 
 (fetching remote data) is restricted by the virtual memory 
 system i.e., the kernel must fetch the entire page (4 KB) 
 just to access even a small object. And the simplicity  
@@ -93,9 +93,8 @@ of the virtual memory interface
 (malloc and load/store) also means that it makes it 
 harder to provide application-specific semantics or 
 hints to the runtime for optimized implementation. 
-For example, similar to NUMA-aware data 
-structures, data structures designed with far memory 
-awareness might perform better than traditional ones 
+For example, data structures designed with far memory 
+awareness might perform a lot better than traditional ones 
 running on a memory-transparent interface~\cite{Aguilera2019}. 
 
 To imbibe application semantics into the runtime, systems 
@@ -113,10 +112,9 @@ granularity to perform more precise hotness tracking
 data amplification. The indirection may however add some 
 performance overhead in critical path compared to native 
 memory accesses. Also, user space runtimes cannot place entire 
-memory remotely
-(e.g., local process segments like stack and code has to be in 
-local memory) which may offset the decoupling benefits of 
-disaggregated memory (e.g., scalability).
+memory remotely (e.g., local process segments like stack and 
+code has to be in local memory) which may offset the 
+decoupling benefits of disaggregated memory.
 
 Programming languages provide inbuilt implementations of 
 common data structures like lists and hash tables either as 
@@ -127,9 +125,9 @@ is to modify just these implementations under the hood to be
 far memory-aware. AIFM, for example, provides remoteable 
 alternatives to standard data structures that provide access 
 hints to the prefetcher or offload data-intensive operations 
-like copy, aggregation, etc. to the memory server. Similarly,
-language runtimes can optimize their implementation around 
-remote memory. For example, remote access latency can 
+like copy, aggregation, etc. to the memory server. 
+Similarly, language runtimes can optimize their implementation 
+around remote memory. For example, remote access latency can 
 be hidden by maintaining lightweight threads and running other
 threads while some thread waits for remote data~\cite{aifm}.  
 Similarly, garbage collectors in managed runtimes like Java
@@ -140,8 +138,8 @@ servers~\cite{semeru}.
 
 \vspace{3pt}
 \noindent \uline{No Transparency.}
-Some interfaces provide remote memory through a custom APIs 
-(usually implemented as a set of library or system calls) that 
+Some interfaces provide remote memory through a custom API 
+(usually implemented as a set of library or system calls) and  
 are not limited by the requirement to abstract away remote 
 memory and to be backwards-compatible. Without such a 
 limitation, the API can choose to be very expressive.
@@ -165,25 +163,25 @@ goals of memory disaggregation.
 % and LITE Memory regions~\cite{literdma} expose 
 % kernel-based remote memory APIs in an effort to provide a
 % higher-level abstractions for RDMA.
-Examples for such interfaces include Remote Regions~\cite{remregions} 
-and LITE Memory regions~\cite{literdma} that expose an expressive
+Examples for such interfaces include Remote 
+Regions~\cite{remregions} and LITE Memory regions~\cite{literdma} 
+which expose an expressive
 kernel-based remote memory API in an effort to provide a 
 higher-level abstraction for RDMA.
 These systems provide a namespace for (contiguous) memory 
 segments (of arbitrary sizes) exposed by machines across the 
 cluster and allow client apps to bind to these segments, 
-and read/write through the ioctl stubs. The more expressive 
+and perform read/write through the ioctl stubs. The expressive 
 interface gives them the flexibility to expose various 
-additional operations like the RPC support in LITE and 
-caching/prefetching hints in Remote Regions. 
-These interfaces however keep it low-level and does not take 
-all the complexity of careful memory management and performance 
-optimizations (next section) and limit themselves to naming 
-and providing fast access to remote memory segments. Other 
-complex systems can certainly use these interfaces 
+additional operations to applications like the RPC support in 
+LITE and caching/prefetching hints in Remote Regions. 
+These interfaces however does not take all the complexity of 
+careful memory management and performance optimizations but
+onloads some to the application. Other complex systems can 
+certainly use these interfaces as a backend 
 (e.g., LegoOS uses LITE as the interconnect) for ease of 
 implementation. Other (user space) examples include the 
-transactional read/write semantics provided by
+read/write API with transactional semantics provided by
 remote memory by recent distributed computing platforms like
 FARM~\cite{farm} and GAM~\cite{gam}.
 
@@ -191,7 +189,6 @@ FARM~\cite{farm} and GAM~\cite{gam}.
 % AIFM or Semeru can use these interfaces to complement them 
 % and provide a complete system that supports sharing and 
 % isolation.
-
 
 \subsubsection{Generality} 
 Is the exposed interface (ABI/API) 
@@ -201,10 +198,12 @@ above or particular runtime below, potentially falling out
 of favor with new kinds of apps/hardware? For example,
 interfaces provided through the kernel-based runtimes 
 (either transparent ones based on virtual memory or 
-non-transparent ones exposed through ioctl stubs) cater to  
+non-transparent ones exposed through ioctl stubs) are more 
+general in the sense that they're available to  
 all the applications regardless of the language they are 
-written in. In addition to being language-specific, user space 
-runtimes~\cite{aifm,semeru} only support remote memory 
+written in. On the other hand, in addition to being 
+language-specific, user space runtimes~\cite{aifm,semeru} 
+only support remote memory 
 access/management for a single application and hence cannot 
 co-ordinate sharing (and isolation) of available remote 
 memory among multiple applications. Such sharing requires 
@@ -213,61 +212,63 @@ mediation of the kernel, at least in the control path.
 
 \subsubsection{Ease of programming.} 
 How easy is it for applications to program with this interface? 
-When working with remote memory, this depends on how much of the 
-complexity of implementation does the interface and the runtime 
+When working with remote memory, this depends on the amount of the 
+complexity of implementation that the interface and the runtime 
 hide away from the application. Naturally, transparent interfaces
 are usually the easiest to program with. Of the non-transparent 
-ones, the complexity may vary depending on how high-level or 
-low-level the abstractions they provide are. As pointed out in
-\cite{Aguilera2017}, adding two variables in disaggregated memory
-would be a simple operation with virtual memory interface 
+ones, the complexity may vary depending on how high- or 
+low-level the abstractions they provide are. For example, 
+as pointed out in~\cite{Aguilera2017}, 
+adding two variables in disaggregated memory
+would be a very simple operation with virtual memory interface 
 (*c = *a + *b). With non-transparent but still high-level 
-abstractions like LITE~\cite{literdma}, we need to first open/map
-the remote memory as LITE region, read variables using \textit{
-LT\_read()} and write the result back using \textit{LT\_write()}.
+abstractions like LITE~\cite{literdma}, we need to first open
+the remote memory as LITE region (\textit{LT\_map()}), 
+read the variables using \textit{LT\_read()} and 
+write the result back using \textit{LT\_write()}.
 Doing the same with using RDMA would be even more complex with 
 setting up queue pairs and memory regions, and reading/writing 
-data by posting work requests. A common but imperfect metric is 
-to compare number of lines of code (LOC). For example, Both
-LITE~\cite{literdma} and Remote Regions~\cite{remregions} show 
-two orders of magnitude reduction in LOC compared to RDMA-based 
-implementation. \todo{figure showing a typical transparent vs 
-non-transparent interface}
+data by posting work requests. A common but imperfect metric 
+to compare ease of programming is the number of lines of code (LOC). 
+For example, both LITE~\cite{literdma} and Remote Regions~\cite{remregions} show 
+two orders of magnitude reduction in LOC compared to pure 
+RDMA-based implementation for various applications accessing 
+remote memory.
     
-\subsubsection{RPCs.} Some operations may be 
-highly sensitive to remote accesses (like graph traversal) 
-and can benefit immensely from having the operation 
-run on a memory server (either in hardware or software 
-depending on the memory server architecture). To support this,
-interfaces allow applications to register/invoke methods on 
-the remote node, such as function shipping in FaRM~\cite{farm}, 
-AIFM Remote Devices~\cite{aifm}, LITE RPC~\cite{literdma}, etc.
-Their scope is generally limited to simple (pre-determined) 
-operations on few memory locations known to be on the memory 
-server. Depending on server capabilities, they may not be
-entirely feasible in hardware disaggregated scenarios.
-Perhaps a middle ground is find a set of hardware primitives 
-(as in~\cite{Aguilera2019}) for common remote side operations and 
-expose only these set as RPCs through platforms like 
-Storm~\cite{storm} and Strom~\cite{strom} that enable  
-implementing these RPCs on the remote NICs.    
+% \subsubsection{RPCs.} Some operations may be 
+% highly sensitive to remote accesses (like graph traversal) 
+% and can benefit immensely from having the operation 
+% run on a memory server (either in hardware or software 
+% depending on the memory server architecture). To support this,
+% interfaces allow applications to register/invoke methods on 
+% the remote node, such as function shipping in FaRM~\cite{farm}, 
+% AIFM Remote Devices~\cite{aifm}, LITE RPC~\cite{literdma}, etc.
+% Their scope is generally limited to simple (pre-determined) 
+% operations on few memory locations known to be on the memory 
+% server. Depending on server capabilities, they may not be
+% entirely feasible in hardware disaggregated scenarios.
+% Perhaps a middle ground is find a set of hardware primitives 
+% (as in~\cite{Aguilera2019}) for common remote side operations and 
+% expose only these set as RPCs through platforms like 
+% Storm~\cite{storm} and Strom~\cite{strom} that enable  
+% implementing these RPCs on the remote NICs.    
 
-\subsubsection{Sharing across nodes.} Does the interface allow 
-sharing the disaggregated memory across multiple nodes? If so, 
-what kind of consistency model does it provide/allow? What 
-kind of synchronization primitives does it provide (basic 
-or advanced)? If sharing is to be supported for transparent virtual 
-memory interface, it should provide same semantics as current 
-cache coherence protocols on the entire address space but 
-providing such strong consistency model across the network 
-is still infeasible (even recent DSMs~\cite{farm,gam} based on 
-RDMA do not attempt it); none of the major (transparent) systems~\cite{infiniswap,legoos} provided this support, perhaps for 
-this reason. Non-transparent ones like 
-Remote Regions~\cite{remregions} and LITE~\cite{literdma} provide
-support for mapping the same region in multiple servers along with
-basic synchronization support like barriers and mutexes for 
-synchronizing their accesses, but no consistency on reads/writes. 
-Sharing generally disallows caching and delayed write-backs,
-both of which are critical to making performance of remote memory 
-feasible for applications, as we will see in the next section.
-\todo{needs work}.
+% \subsubsection{Sharing across nodes.} Does the interface allow 
+% sharing the disaggregated memory across multiple nodes? If so, 
+% what kind of consistency model does it provide/allow? What 
+% kind of synchronization primitives does it provide (basic 
+% or advanced)? If sharing is to be supported for transparent virtual 
+% memory interface, it should provide same semantics as current 
+% cache coherence protocols on the entire address space but 
+% providing such strong consistency model across the network 
+% is still infeasible (even recent DSMs~\cite{farm,gam} based on 
+% RDMA do not attempt it); none of the major (transparent) systems~\cite{infiniswap,legoos} provided this support, perhaps for 
+% this reason. Non-transparent ones like 
+% Remote Regions~\cite{remregions} and LITE~\cite{literdma} provide
+% support for mapping the same region in multiple servers along with
+% basic synchronization support like barriers and mutexes for 
+% synchronizing their accesses, but no consistency on reads/writes. 
+% Sharing generally disallows caching and delayed write-backs,
+% both of which are critical to making performance of remote memory 
+% feasible for applications, as we will see in the next section.
+% \todo{needs work}.

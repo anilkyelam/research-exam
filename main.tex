@@ -14,6 +14,7 @@
 \usepackage{xcolor}
 \usepackage{multirow}
 
+\pagenumbering{arabic}
 
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
@@ -30,6 +31,7 @@
 %% end of the preamble, start of the body of the document source.
 \begin{document}
 
+
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
@@ -40,6 +42,8 @@
 %  \institution{UC San Diego}}
 \email{ayelam@ucsd.edu}
 
+%% enable page numbers
+\settopmatter{printfolios=true}
 
 \input{abstract}
 \maketitle

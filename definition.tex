@@ -3,26 +3,27 @@
 Memory disaggregation aims to decouple the available compute 
 and memory resources in the cluster and allow for independent 
 allocations of these resources regardless of where a job 
-is placed in the cluster. This means, the OS/runtime 
-that's running thwe job should provide a platform to 
+is placed. This means, the OS/runtime 
+that's running the job should provide a platform to 
 expose/give access to potentially all the memory 
 available in the cluster. Ideally, it should hide the 
-complexity of setting up and accessing remote memory (e.g., RDMA 
-connection and queue pair management) and expose an
-easy-to-use interface for working with remote memory.
+complexity of setting up and accessing remote memory 
+(e.g., RDMA connection setup) and 
+expose an easy-to-use interface for working with remote memory.
 At the same time, it should trade-off the properties 
 of the interface with decent performance guarantees 
 and other requirements from the system like resource 
 sharing and isolation across applications. At a high 
 level, the platform is a distributed system consisting 
-of a client-side (compute-side) component (a runtime 
+of a client-side (compute-side) components (a runtime 
 that exposes the memory interface and acts as an agent 
-on each compute node), the server-side (memory) component 
-(to manage memory on the server) and an 
-interconnect over which these components 
-interact to provide an abstraction for shared cluster memory.
-It may optionally include other cluster resources for 
-global memory/metadata management.
+on each compute node), the server-side (memory) components 
+(to manage memory on each memory server) and an 
+interconnect over which these components interact to 
+provide an abstraction for shared cluster memory.
+It may optionally include other cluster resources like
+centralized managed for global memory/metadata management
+and failure handling.
 
 \vspace{3pt}
 \noindent \uline{Target Architecture.}
@@ -48,11 +49,10 @@ Figure ~\ref{fig:architecture}).
     or vary in capacity over time. 
 
     \item \textbf{Hardware-disaggregated.}
-    Other systems~\cite{kona,aifm,fastswap,semeru}, like 
-    LegoOS~\cite{legoos}, target a 
-    hardware disaggregated architecture where (most of the) 
-    memory nodes are detached from the compute nodes and 
-    made available through the network. The memory node 
+    Other systems~\cite{kona,aifm,fastswap,semeru,legoos} 
+    target a hardware disaggregated architecture where (most 
+    of the) memory nodes are detached from the compute nodes 
+    and made available through the network. The memory node 
     can be a traditional monolithic server with limited 
     compute and stuffed with DRAM~\cite{fastswap} or 
     each DRAM unit itself directly-attached to a memory 
@@ -63,21 +63,20 @@ Figure ~\ref{fig:architecture}).
     versa.~\cite{legoos,kona}
 \end{itemize}
 
-In both architectures, compute servers use local memory 
+In both architectures, compute servers use the local memory 
 to run the OS and other runtime essentials for exposing remote 
 memory, and only use remote memory for the applications. 
 There are many reasons for this choice. 
 First, without local DRAM, all the memory 
 accesses would be remote and the memory controller should 
 possess the knowledge and capability to fetch remote memory 
-directly without any help from software; such complex "control 
-path" knowledge would need either a "smart" memory controller 
+directly without any help from software; such complex ``control 
+path" knowledge would need either a ``smart" memory controller 
 (e.g., RMC in soNUMA~\cite{sonuma}) or some other smart 
 hardware (e.g., ccFPGA in Kona~\cite{kona}) next to it. 
 Even these solutions do not put OS on remote memory and 
 and maintain local DRAM to exploit cache locality as remote 
-accesses are still an at least an order of magnitude higher 
-than local.
+accesses are still worse than local.
 
 {\renewcommand{\arraystretch}{1.2}% for the vertical row padding
 \begin{table*}[!t]

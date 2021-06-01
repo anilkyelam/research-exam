@@ -1,134 +1,174 @@
 \section{DISCUSSION}
 \label{sec:discussion}
-Future challenges and opportunities in topics described 
-above or any new ones that needs to be solved that could 
-make disaggregation more amenable for adoption.
+In this section, we discuss some challenges that 
+were not pointed out in preceding sections (not dealt 
+in existing systems) and other opportunities that makes these 
+systems more feasible.
 We also particularly look at challenges and opportunities 
-proposed by Aguilera et al.~\cite{Aguilera2017} and 
-highlight some of them that are yet to be explored.
+presented by Aguilera et al.~\cite{Aguilera2017} four 
+years ago and highlight some of them that are yet to be 
+explored.
 
 
 \vspace{3pt}
-\noindent \uline{Job scheduling on such systems.}
-2. What's the future of job scheduling like 
-fastswap in the context of far memory? 
-1. Extending fast swap on how many jobs can 
-co-exist decently on a particular compute node 
-oversubscribing cache space for local memory?
-It depends on locality patterns of the apps,
-we find a balanced mixture of apps that can 
-do well with fixed amount of local memory
-as cache.
+\noindent \uline{Transparency vs. App Integration}
+Transparency is important for adoption so, as we've seen, 
+most previous systems opt for it. However, as 
+language-based runtimes have shown, exploiting 
+application hints/semantics for optimizing runtime can be
+a key factor in cutting down the performance impact.
+Perhaps there is a middle-ground to be found here 
+where a system provides both options and the choice is left
+to the application to either run without changes or 
+provide hints for better performance. For example, 
+a kernel-based virtual memory interface that also exposes 
+a custom API through 
+ioctl (like LITE~\cite{literdma}) to, for example, supply 
+application-specific prefetching or call an RPC.
 
 
 \vspace{3pt}
 \noindent \uline{Disaggregated Memory for VMs and beyond.}
 Most modern workloads run on some virtualization platform 
-or the other~\cite{Aguilera2017}. 
-Need to extend it for virtualization solutions (VMs, Containers,
-Lambdas, etc.) with proper SLO guarantees to serve the cloud model. 
-Making it available for virtual machines through the 
-hypervisor, there hasn't been any work in this direction.
-Through Hypervisor, would add an additional layer 
-introducing overheads and gap between apps. 
-Some works already 
-consider hypervisors:~\cite{Lim2012}. 
+or the other (VMs, Containers, Lambdas, etc.)~\cite{Aguilera2017}, 
+so there is a need to extend disaggregated memory to such 
+platforms for wider adoption. The hypervisor can take the place 
+of the kernel in implementing runtime and managing/providing 
+the diaggregated memory. However, VMs, unlike processes, come 
+with strict SLOs and with an expectation of performance isolation,
+so the runtime needs to account for this while managing memory 
+(e.g., proper memory accouting, maintaining separate caches, etc.). 
+Also, the gap between the application and the runtime is further 
+widened making it harder to get app-specific information.
 
 
 \vspace{3pt}
-\noindent \uline{Is Transparency the way forward?}
-Most systems use transparent in an effort to stay relevant.
-But app hints seem to be important in keeping up performance.
-May be there is a middle-ground where app can choose the 
-interface to be transparent or not?
-Could managed/userspace runtimes be the future of 
-remote memory systems? Is far memory awareness really 
-important in the longer term? What kind of adoption did 
-NUMA-aware data structures see?
-A kernel-based interface that allows for 
-application-runtime co-design. Providing perf 
-benefits of userspace runtimes while generality 
-and sharing benefits of kernel-based 
-implementation. but what's lacking in 
-remote regions? 
-
-\vspace{3pt}
-\noindent \uline{What's the right sharing model?}
-Systems have so far avoided providing any explicit
-sharing and only coarse grained sharing. 
-may be there is a middle-ground in the ones provided 
-by remote regions and such. 
-paper suggests even coarser sharing but it hasn't
-explored yet.
+\noindent \uline{Job scheduling on disaggregated systems.}
+Ideally, job scheduling based on its CPU and memory requirements 
+should be simple on a disaggregated system because as long 
+as the cluster has enough memory for a job, it can be placed  
+anywhere. However, non-uniform memory access between local 
+and remote memory means that cluster throughput would be 
+higher if total number of remote accesses, which can depend
+on job placement, is minimized. For example, given similar 
+compute requirements, jobs with large working memory are   
+better paired with the ones with smaller working sets on the 
+individual compute nodes to balance out contention for the 
+local DRAM (cache). Similarly, different jobs react differently 
+to reduced local memory (cache) size which is another aspect on 
+which jobs can be balanced to prioritize the sensitive ones.
+This line of work can build on farm-memory aware schedulers 
+like Fastswap~\cite{fastswap}.
 
 
 \vspace{3pt}
-\noindent \uline{What's the right amount of local memory?}
-In har
-since local DRAM is fixed and cannot be huge, how to 
-determine this? Should most of the kernel be moved too?
-in s/w systems, this becomes a problem to how to 
-prioritize between local and cluster memory. 
-11. What is the bare minimum piece of runtime that must run 
-locally? Perhaps parts of a monolithic OS like Linux can 
-still go on remote memory leaving a very thin kernel 
-required for supporting caching and remote memory ops. 
-What are the benefits? Is Yizhou's network disaggregation 
-related?
+\noindent \uline{Memory sharing and consistency model.}
+Systems so far have either completely avoided any explicit 
+memory sharing across servers or provided only coarse-grained 
+sharing with no consistency guarantees. 
+If sharing is to be supported for transparent virtual 
+memory interface, it should provide same semantics as current 
+cache coherence protocols on the entire address space but 
+providing such strong consistency model across the network 
+is still infeasible (even the recent RDMA-based DSMs~\cite{farm,gam} 
+do not attempt it); none of the major (transparent) 
+disaggregation systems~\cite{infiniswap,legoos} provided this 
+support, perhaps for this reason. Non-transparent ones like 
+Remote Regions~\cite{remregions} and LITE~\cite{literdma} provide
+support for mapping the same region in multiple servers along with
+basic synchronization support like barriers and mutexes for 
+synchronizing their accesses, but no consistency on reads/writes. 
+Sharing generally disallows caching and delayed write-backs,
+both of which are critical to making performance of remote memory 
+feasible for applications, as we have seen in 
+section~\ref{sec:performance}. Aguilera et al.~\cite{Aguilera2017}
+mooted the idea of non-simultaneous sharing where at any time, 
+memory is accessed exclusively by a single host, but across 
+time it can be accessed by many; which is enough for some common 
+distributed workloads like Map Reduce.
 
 
 \vspace{3pt}
-\noindent \uline{What's the right server-side complexity?}
-In har
-since local DRAM is fixed and cannot be huge, how to 
-determine this? Should most of the kernel be moved too?
-in s/w systems, this becomes a problem to how to 
-prioritize between local and cluster memory. 
-legoOs assumes mcomponents can perform complex tasks like 
-logging, replication, etc. 
-What server capabilities are reasonable? Should function 
-shipping be allowed?
+\noindent \uline{The extent of memory-side compute.}
+Most previous systems differ significantly on the 
+amount of remote/near-memory compute capabilities they expect 
+of the memory server. At the bare minimum, the memory server 
+should serve remote memory allocations and accesses while 
+managing its local memory. Some systems go further and offload 
+other runtime tasks ranging from address mapping, replication and 
+persisting to disk~\cite{legoos} to garbage collection~\cite{semeru} 
+on the memory servers. Others~\cite{aifm,literdma} introduce 
+RPCs that applications can run on the memory server, which can 
+be of arbitrary complexity. This may be a slippery slope as it adds 
+complexity to the memory server that we may not want, at least in 
+the hardware disaggregated setting where there is limited compute 
+on memory nodes. Even in the traditional setup, we are still 
+looking to decouple CPU from memory, and  increasing compute 
+complexity on the remote memory side does not help with 
+disaggregation and complicates resource accounting. 
+Perhaps a middle ground is to find a set of hardware primitives 
+(as in~\cite{Aguilera2019}) for common remote side operations and 
+expose only these set as RPCs through platforms like 
+Storm~\cite{storm} and Strom~\cite{strom} that enable  
+implementing these RPCs on the remote NICs. 
 
 
 \vspace{3pt}
-\noindent \uline{Need for standard benchmarks}
-5. Wide ranging benchmarks? Spark failure shows that 
-bad locality can hurt app performance beyond salvage due 
-to thrashing. A standard benckmark with wide range of 
-applications to properly compare across systems.
-Mem utilization should be a standard metric to evaluate.
-1. Does memory disaggregation make sense for 
-compute-intensive applications? What applications/use-cases
-is it the most suitable for? What are some apps where it 
-would not work? Remote memory may not be that beneficial for 
-compute-intensive applications as memory accesses 
-get amortized and using disk may not be that bad. 
-Then why did spark fail to run on Infiniswap? 
-Because working set is big and it started thrashing? 
+\noindent \uline{Exploiting other new trends 
+in the datacenters.}
+With datacenters increasingly employing heterogeneous 
+hardware, disaggregated memory should be made accessible 
+to these devices as well. This raises the question of 
+the best interface for accessing memory from such  
+custom devices like GPUs or FPGAs, and how feasible they 
+are for implementation on these devices. For example, 
+traditional paging-based interfaces cannot be 
+implemented on custom hardware that lacks the TLB and MMU 
+hardware (LegoOS~\cite{legoos} moves the translation hardware 
+to memory nodes making it friendlier for such hardware). 
+Another related trend is the 
+adoption of programmable networking hardware like 
+NICs and switches. Switches have been used to 
+accelerate applications through in-switch caching, load
+balancing, etc. Similar acceleration opporunities may be found 
+in case of diaggregated memory systems for global tasks like 
+memory management and load balancing in the critical path.
+
+% Kona provides a first view...
+% Hardware like Kona is good but handling the
+% complexity of replication and security in the 
+% hardware might be hard?
+% 3. How might the new hardware architectures e.g., 
+% emerging networking interconnects like OmniPath 
+% affect the design of such systems? 
+% 13. Currently can't scale to more than rack-scale or a few 
+% racks due to interconnect latency. but 
+% as new technologies and runtimes within 
+% the server cut the latencies, it will perhaps 
+% allow more interconnect distance between the 
+% servers, and grow to an entire datacenter. 
 
 
 \vspace{3pt}
-\noindent \uline{Co-existing/exploting other trends 
-in the data centers}
-Opportunities with programmable networking
-using it for memory and network load-balancing 
-prevent congestion
-15. Challenges that come with accelerators 
-10. What interface works best for accelerators, keeping 
-the hardware heterogeneity? 
-Kona provides a first view...
-Hardware like Kona is good but handling the
-complexity of replication and security in the 
-hardware might be hard?
-3. How might the new hardware architectures e.g., 
-emerging networking interconnects like OmniPath 
-affect the design of such systems? 
-13. Currently can't scale to more than rack-scale or a few 
-racks due to interconnect latency. but 
-as new technologies and runtimes within 
-the server cut the latencies, it will perhaps 
-allow more interconnect distance between the 
-servers, and grow to an entire datacenter. 
+\noindent \uline{The need for a standard benchmark.}
+A disaggregated system is expected to be general and support
+a wide variety of applications, not just interface-wise but 
+also w.r.t. the performance impact. As many recent 
+systems show in their evaluation~\cite{netdisagg,legoos,fastswap}, 
+performance degradation can vary dramatically across 
+applications depending on the amount of local memory.
+Similarly, different applications react differently to 
+perfomance optimizations like caching and prefetching,
+based on their memory access and locality patterns. 
+Given this heterogeneity, the benchmark for evaluating a 
+diaggregated memory system should include a variety of 
+applications ranging from compute to memory intensive ones. 
+It is also preferable to have a standard one to objectively 
+compare various systems and better quantify their differences 
+(all recent systems chose their own set of custom benchamrking 
+applications and very few of them intersect making the 
+comparison across the spectrum infeasible as the benchmark
+may be biased in favor of their own systems). 
 
 
 % IMP QUESTIONS FOR THE TALK
