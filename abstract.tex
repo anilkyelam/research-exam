@@ -1,33 +1,27 @@
 
 \begin{abstract}
-Memory disaggregation addresses memory imbalance  
-in a cluster by decoupling CPU and memory allocations 
-of applications while increasing the effective 
-memory capacity for memory-intensive 
-applications beyond the local memory limit  
-imposed by traditional fixed-capacity servers.
-As the network speeds in the local networks like 
-modern datacenters inch closer to the DRAM speed,
-there has been a recent proliferation of work in 
-this space, ranging from software solutions that  
-pool memory of traditional servers and make it 
-available to the cluster, to systems targeting 
-the memory disaggregated in hardware. 
-In this report, we look at some of these approaches 
-towards memory disaggregation systems and study in 
-detail the important factors that guide their design;
-such as
-the interface through which the memory is exposed 
-to the application, the implementation of the runtime 
-and relevant performance optimizations to retain 
-the near-native application performance, 
-the various approaches 
-to the global memory management with a goal of 
-maximizing memory utilization, etc. and study the 
-associated trade-offs.
-We conclude with a discussion on the further  
-challenges and future opportunities that 
-can help make disaggregation more amenable 
-for adoption. 
+Memory disaggregation addresses memory imbalance in a 
+cluster by decoupling CPU and memory allocations of 
+applications while also increasing the effective memory 
+capacity for (memory-intensive) applications beyond the 
+local memory limit imposed by traditional fixed-capacity 
+servers. As the network speeds in the tightly-knit 
+environments like modern datacenters inch closer to the 
+DRAM speeds, there has been a recent proliferation of 
+work in this space ranging from software solutions that 
+pool memory of traditional servers for the shared use of 
+the cluster to systems targeting the memory disaggregation
+in the hardware. 
+In this report, we look at some of these recent memory 
+disaggregation systems and study the important factors 
+that guide their design, such as the interface through 
+which the memory is exposed to the application, the 
+runtime implementation and relevant optimizations to 
+retain the near-native application performance, 
+various approaches to the cluster memory management to 
+maximize memory utilization, etc. and analyze the 
+associated trade-offs. We conclude with a discussion 
+on some open questions and potential future directions  
+that can render disaggregation more amenable for adoption.
 
 \end{abstract}

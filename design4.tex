@@ -6,13 +6,13 @@ worked on for adoption in the wild. As work on performance tuning
 saturates, we expect there to be more focus on these topics in future. 
 
 \subsubsection{Fault Tolerance \& Reliability}
-By spreading memory across multiple servers/nodes, memory 
+By distributing the memory across multiple servers/nodes, memory 
 disaggregation expands the fault domain of an application 
 and makes it more prone to failures. Our system should account
-for this; we only generally need to worry about remote node 
+for this; we only need to worry about remote node 
 failures as local node failures occur in traditional 
-setup too and the goal is for our system to be no less 
-fault-tolerant than traditional setup.
+setup too and the goal is for our system to be as 
+fault-tolerant as the traditional setup.
 
 One option is in-memory replication~\cite{leap,kona}.
 This, however, would consume at least twice as much memory,

@@ -1,16 +1,6 @@
 \section{INTRODUCTION}
 \label{sec:intro}
 
-\begin{figure*}[h!]
-    \centering
-    \includegraphics[width=.9\linewidth]{fig/architecture.pdf}
-    \caption{Shows (a) software-disaggregated 
-    architecture where disaggregated memory is pooled from 
-    traditional servers as opposed to the (b) hardware-disaggregated
-    design where most memory is decoupled in hardware.}
-    \label{fig:architecture}
-\end{figure*}
-
 With the tremendous growth of computing in the past two 
 decades, applications have become both data-intensive 
 and latency-sensitive, which gave rise to in-memory 
@@ -64,11 +54,10 @@ As the networks become faster and technologies such as
 RDMA~\cite{farm,rocev2} arrive to commodity clusters, 
 the remote access latencies are inching closer to native 
 DRAM latencies (which, on the contrary, are nearing 
-saturation~\cite{Aguilera2017}), making remote memory more 
+saturation)~\cite{Aguilera2017}, making remote memory more 
 accessible for applications performance-wise~\cite{netdisagg}.
-\todo{table with numbers}. 
 Consequently, there has been a renewed interest in 
-recent years in building remote memory 
+the last half-a-decade in building remote memory 
 systems~\cite{infiniswap,zswap,leap,fastswap,
 legoos,kona,aifm,semeru,remregions,literdma}.
 Traditional way of memory disaggregation is to pool/track  

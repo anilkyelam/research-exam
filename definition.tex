@@ -1,5 +1,15 @@
 \section{Memory Disaggregation}
 
+\begin{figure*}[h!]
+    \centering
+    \includegraphics[width=.9\linewidth]{fig/architecture.pdf}
+    \caption{Shows (a) software-disaggregated 
+    architecture where disaggregated memory is pooled from 
+    traditional servers as opposed to the (b) hardware-disaggregated
+    design where most memory is decoupled in hardware.}
+    \label{fig:architecture}
+\end{figure*}
+
 Memory disaggregation aims to decouple the available compute 
 and memory resources in the cluster and allow for independent 
 allocations of these resources regardless of where a job 
@@ -33,35 +43,39 @@ existing technologies or technologies that are expected
 to be available in the near future (shown in 
 Figure ~\ref{fig:architecture}).
 
-\begin{itemize}
-    \item \textbf{Software-disaggregated.}
-    Some systems~\cite{gms,cashmere,infiniswap,remregions,
-    leap,zswap} target the traditional homogeneous 
-    datacenters with monolithic servers as the basic 
-    deployment unit, connected to each other by low-latency 
-    network interconnects like Infiniband or RoCE. Each 
-    unit hosts both compute and memory resources and the 
-    software provides an interface to remote memory 
-    on other nodes. Local memory is prioritized for 
-    local jobs and unutilized memory on all the nodes 
-    can be pooled and presented to the cluster as 
-    remote/disaggregated memory, which could be static 
-    or vary in capacity over time. 
+% \begin{itemize}
+%     \item 
+\vspace{3pt}
+\noindent \textbf{1. Software-disaggregated.}
+Some systems~\cite{gms,cashmere,infiniswap,remregions,
+leap,zswap} target the traditional homogeneous 
+datacenters with monolithic servers as the basic 
+deployment unit, connected to each other by low-latency 
+network interconnects like Infiniband or RoCE. Each 
+unit hosts both compute and memory resources and the 
+software provides an interface to remote memory 
+on other nodes. Local memory is prioritized for 
+local jobs and unutilized memory on all the nodes 
+can be pooled and presented to the cluster as 
+remote/disaggregated memory, which could be static 
+or vary in capacity over time. 
 
-    \item \textbf{Hardware-disaggregated.}
-    Other systems~\cite{kona,aifm,fastswap,semeru,legoos} 
-    target a hardware disaggregated architecture where (most 
-    of the) memory nodes are detached from the compute nodes 
-    and made available through the network. The memory node 
-    can be a traditional monolithic server with limited 
-    compute and stuffed with DRAM~\cite{fastswap} or 
-    each DRAM unit itself directly-attached to a memory 
-    controller and network interface~\cite{legoos}. 
-    Even in a purely disaggregated setup, however, 
-    it is generally assumed that each compute node has 
-    a small amount of local memory and vice 
-    versa.~\cite{legoos,kona}
-\end{itemize}
+    % \item 
+\vspace{3pt}
+\noindent \textbf{2. Hardware-disaggregated.}
+Other systems~\cite{kona,aifm,fastswap,semeru,legoos} 
+target a hardware disaggregated architecture where (most 
+of the) memory nodes are detached from the compute nodes 
+and made available through the network. The memory node 
+can be a traditional monolithic server with limited 
+compute and stuffed with DRAM~\cite{fastswap} or 
+each DRAM unit itself directly-attached to a memory 
+controller and network interface~\cite{legoos}. 
+Even in a purely disaggregated setup, however, 
+it is generally assumed that each compute node has 
+a small amount of local memory and vice 
+versa.~\cite{legoos,kona}
+% \end{itemize}
 
 In both architectures, compute servers use the local memory 
 to run the OS and other runtime essentials for exposing remote 
@@ -82,73 +96,73 @@ accesses are still worse than local.
 \begin{table*}[!t]
     \centering
     \begin{tabular}{l|ccccc} 
-        \hline         
-        \textbf{Interface Type}
+        % \hline         
+        \textbf{\shortstack[l]{Interface Type \\ (Implementation)}}
             & \textbf{System}
-            & \textbf{Transparent?}
-            & \textbf{General?}
-            & \textbf{\shortstack[l]{What's\\Remote}}
-            & \textbf{\shortstack[l]{Sharing \\ support}}
+            & \textbf{Transparent}
+            & \textbf{General}
+            & \textbf{\shortstack[c]{What can be\\Remote}}
+            & \textbf{\shortstack[c]{Sharing \\ support}}
         \\ \hline
         \multirow{4}{*}{\shortstack[l]{Virtual Memory \\ (Traditional Paging)}}
-            & Infiniswap~\cite{infiniswap}
+            & Infiniswap~\cite{infiniswap} (2017)
             & Yes
             & Yes
             & All
             & No
         \\ \cline{2-6}
-            & zSwap~\cite{zswap}
+            & zSwap~\cite{zswap} (2019)
             & Yes
             & Yes
             & All
             & No
         \\ \cline{2-6}
-            & Leap~\cite{leap}
+            & Leap~\cite{leap} (2019)
             & Yes
             & Yes
             & All
             & No
         \\ \cline{2-6}
-            & Fastswap~\cite{fastswap}
+            & Fastswap~\cite{fastswap} (2020)
             & Yes
             & Yes
             & All
             & No
         \\ \hline
         \multirow{2}{*}{\shortstack[l]{Virtual Memory \\ (New Hardware)}}
-            & LegoOS~\cite{legoos}
+            & LegoOS~\cite{legoos} (2018)
             & Yes
             & Yes
             & All
             & No
         \\ \cline{2-6}
-            & Kona~\cite{kona}
+            & Kona~\cite{kona} (2021)
             & Yes
             & Yes
             & Heap
             & No
         \\ \hline
         \multirow{2}{*}{\shortstack[l]{Language-based \\ (User space)}}
-            & AIFM~\cite{aifm}
+            & AIFM~\cite{aifm} (2020)
             & Yes
             & No
             & Portion
             & No
         \\ \cline{2-6}
-            & Semeru~\cite{semeru}
+            & Semeru~\cite{semeru} (2020)
             & Yes
             & No
             & (Java) Heap
             & No
         \\ \hline
         \multirow{2}{*}{\shortstack[l]{Custom API \\ (Kernel-based)}}
-            & Remote Regions~\cite{remregions}
+            & Remote Regions~\cite{remregions} (2020)
             & No
             & Yes
             & Portion
             & Basic
         \\ \cline{2-6}
-            & LITE MRs~\cite{literdma}
+            & LITE MRs~\cite{literdma} (2017)
             & No
             & Yes
             & Portion
