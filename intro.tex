@@ -66,12 +66,12 @@ and use it to complement memory on the memory-hungry servers.
 This is still popular, with the work on remote swapping systems 
 continuing to this day~\cite{infiniswap,fastswap,zswap,leap}.
 The other, more recent approach is to disaggregate the memory 
-in hardware and where all the memory is decoupled from compute
-and is made available to the compute nodes via 
+in hardware and where all the memory is decoupled from 
+compute and is made available to the compute nodes via 
 the network~\cite{legoos,bladedisagg1,sonuma}. 
-We use the terms \textit{remote} or 
-\textit{disaggregated} memory synonymously to refer 
-to all the memory available for shared usage of the cluster 
+We use the terms \textit{remote} or \textit{disaggregated} 
+memory synonymously to refer to all the memory available for 
+shared usage of the cluster 
 whether it is pooled in software or hardware. 
 
 In both cases, building a system 
@@ -82,14 +82,14 @@ to either be transparent and avoid any application changes,
 or to be more expressive and provide richer functionality and 
 exploit application information/semantics for performance. 
 Moreover, remote access 
-latencies are still an order-of-magnitude worse than local, so the 
-system should implement performance optimizations like caching 
-or at the least, enable applications to implement such optimizations
-to hide the impact of remote latencies. 
-While providing reasonable programming model and minimal 
-performance degradation
-for a wide range of applications, it should also work towards 
-efficiently managing the cluster memory behind the scenes and 
+latencies are still an order-of-magnitude worse than local, 
+so the system should implement performance optimizations 
+like caching or at the least, enable applications to 
+implement such optimizations to hide the impact of remote 
+latencies. While providing reasonable programming model and 
+minimal performance degradation for a wide range of 
+applications, it should also work towards efficiently 
+managing the cluster memory behind the scenes and 
 maintain good memory utilization. 
 
 In this report, we explore in 
